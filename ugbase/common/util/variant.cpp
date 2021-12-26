@@ -33,6 +33,10 @@
 #include "common/error.h"
 #include "variant.h"
 
+#include <iostream>
+#define untested() ( std::cerr <<  "@@#\n@@@:"<< __FILE__ << ":"<< __LINE__ \
+          <<":" << __func__ << "\n" )
+
 using namespace std;
 
 namespace ug{
@@ -101,6 +105,10 @@ Variant::Variant(LuaFunctionHandle val) :
 	m_luafcthandle(val),
 	m_type(VT_LUA_FUNCTION_HANDLE)
 {}
+Variant::Variant(LuaTableHandle val) :
+	m_luatblhandle(val),
+	m_type(VT_LUA_TABLE_HANDLE)
+{}
 #endif
 
 Variant::Variant(const Variant& v)
@@ -139,6 +147,20 @@ const Variant& Variant::operator=(const Variant& v)
 
 void Variant::assign_variant(const Variant& v)
 {
+#ifdef UG_FOR_LUA
+	// need std::variant behaviour in order to be able to
+	// work with objects.
+	if(m_type == VT_LUA_TABLE_HANDLE && v.m_type != m_type){ untested();
+		m_luatblhandle.~LuaTableHandle();
+	}else if(m_type == VT_LUA_TABLE_HANDLE && v.m_type == m_type){ untested();
+		// assign.
+		m_luatblhandle = v.m_luatblhandle;
+	}else if(v.m_type == VT_LUA_TABLE_HANDLE && v.m_type != m_type){
+		// create in place, reuse memory.
+		new (&m_luatblhandle) LuaTableHandle(v.m_luatblhandle);
+	}else{
+	}
+#endif
 	switch(v.m_type){
 		case VT_BOOL:
 			m_bool = v.m_bool;
@@ -346,6 +368,10 @@ LuaFunctionHandle Variant::to_lua_function_handle() const
 {
 	return m_luafcthandle;
 }
+LuaTableHandle Variant::to_lua_table_handle() const
+{
+	return m_luatblhandle;
+}
 #endif
 
 const char* Variant::type_name() const
@@ -373,6 +399,7 @@ const char* Variant::type_name() const
 std::ostream& operator<< (std::ostream& outStream, const ug::Variant& v)
 {
 	using namespace ug;
+	// TODO?: hide enum
 	switch(v.type()){
 		case Variant::VT_BOOL:
 			if(v.to_bool())
