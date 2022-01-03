@@ -111,7 +111,7 @@ Variant::Variant(LuaTableHandle val) :
 {}
 #endif
 
-Variant::Variant(const Variant& v)
+Variant::Variant(const Variant& v) : m_type(VT_INVALID)
 {
 	assign_variant(v);
 }
@@ -199,6 +199,8 @@ void Variant::assign_variant(const Variant& v)
 #ifdef UG_FOR_LUA
 		case VT_LUA_FUNCTION_HANDLE:
 			m_luafcthandle = v.m_luafcthandle;
+			break;
+		case VT_LUA_TABLE_HANDLE:
 			break;
 #endif
 		default:

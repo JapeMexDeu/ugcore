@@ -161,7 +161,8 @@ LuaTableHandle::LuaTableHandle(LuaTableHandle const& p)
 }
 
 LuaTableHandle::LuaTableHandle(LuaTableHandle&& p)
-{ untested();
+    : _data(nullptr)
+{
 	impl::LuaTableHandle_::attach(p._data, &_data);
 	impl::LuaTableHandle_::detach(&p._data);
 }
