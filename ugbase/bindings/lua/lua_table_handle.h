@@ -56,7 +56,8 @@ public:
 
 public:
 	size_t size() const;
-	ug::Variant get(std::string key) const;
+	ug::Variant get(std::string const& key) const;
+	ug::Variant get(int const& key) const;
 
 	LuaTableHandle& operator=(LuaTableHandle const&);
 	LuaTableHandle& operator=(LuaTableHandle&&);

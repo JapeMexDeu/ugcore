@@ -18,6 +18,31 @@ extern "C" {
 namespace ug {
 namespace impl {
 
+static ug::Variant pop2var(lua_State* _L)
+{
+	int t = lua_type(_L, -1);
+	ug::Variant ret;
+
+	if(t == LUA_TTABLE){
+		LuaTableHandle h(_L, -1);
+		ret = ug::Variant(h);
+	}else if(t == LUA_TNUMBER){
+		number n = lua_tonumber(_L, -1);
+		ret = ug::Variant(n);
+	}else if(t == LUA_TBOOLEAN){
+		bool b = lua_toboolean(_L, -1);
+		ret = ug::Variant(b);
+	}else if(lua_isstring(_L, -1)){
+		std::string s(lua_tostring(_L, -1));
+		ret = ug::Variant(s);
+	}else if(t == LUA_TNIL){
+	}else{
+		std::cerr << "type not handled " << t << "\n";
+	}
+
+	return ret;
+}
+
 struct LuaTableHandle_{
 public:
 	LuaTableHandle_(lua_State*, int);
@@ -85,33 +110,25 @@ public:
 		return n;
 	}
 
-	ug::Variant get(std::string& key) const{
+	ug::Variant get(int const& key) const{
+		lua_rawgeti(_L, LUA_REGISTRYINDEX, _ref);
+		lua_rawgeti(_L, _index, key);
+
+		ug::Variant ret = pop2var(_L);
+
+		lua_pop(_L, 1); // pop value
+		lua_pop(_L, 1); // pop ref
+
+		return ret;
+	}
+	ug::Variant get(std::string const& key) const{
 		lua_rawgeti(_L, LUA_REGISTRYINDEX, _ref);
 		lua_getfield(_L, _index, key.c_str());
 
 		// std::cerr << "getfield " << key << " type " << lua_type(_L, -1) << "\n";
 
-		ug::Variant ret;
+		ug::Variant ret = pop2var(_L);
 
-		int t = lua_type(_L, -1);
-
-		if(t == LUA_TTABLE){
-			LuaTableHandle h(_L, -1);
-			ret = ug::Variant(h);
-		}else if(t == LUA_TNUMBER){
-			number n = lua_tonumber(_L, -1);
-			ret = ug::Variant(n);
-		}else if(t == LUA_TBOOLEAN){
-			bool b = lua_toboolean(_L, -1);
-			ret = ug::Variant(b);
-		}else if(lua_isstring(_L, -1)){
-			std::string s(lua_tostring(_L, -1));
-			ret = ug::Variant(s);
-		}else if(t == LUA_TNIL){
-		}else{
-			std::cerr << "type not handled " << t << "\n";
-			ret = ug::Variant();
-		}
 		lua_pop(_L, 1); // pop value
 		lua_pop(_L, 1); // pop ref
 		return ret;
@@ -192,7 +209,13 @@ size_t LuaTableHandle::size() const
 	return _data->size();
 }
 
-ug::Variant LuaTableHandle::get(std::string key) const
+ug::Variant LuaTableHandle::get(std::string const& key) const
+{
+	assert(_data);
+	return _data->get(key);
+}
+
+ug::Variant LuaTableHandle::get(int const& key) const
 {
 	assert(_data);
 	return _data->get(key);
