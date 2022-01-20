@@ -112,7 +112,7 @@ public:
 
 	ug::Variant get(int const& key) const{
 		lua_rawgeti(_L, LUA_REGISTRYINDEX, _ref);
-		lua_rawgeti(_L, _index, key);
+		lua_rawgeti(_L, _index, key+1); // lua starts at 1.
 
 		ug::Variant ret = pop2var(_L);
 
